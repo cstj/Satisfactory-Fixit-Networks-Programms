@@ -1,0 +1,78 @@
+local refreshLimit = 50000
+
+function splitOnChar (inputstr, sep)
+   if sep == nil then
+      sep = "%s"
+   end
+   local t={}
+   for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+      table.insert(t, str)
+   end
+   return t
+end
+
+function findBuildings()
+   print("Finding Pairs of Store and Control")
+   local stores = component.findComponent("Store")
+   local bldP = {}
+   for k, v in pairs(stores) do
+      store = component.proxy(v)
+      --Get ItemName from Nick
+      local itemName = ""
+      for sk, str in pairs(splitOnChar(store.nick, " ")) do
+         if  str ~= "Store" then itemName = str end
+      end
+      --Find corasponding Control
+      local controls = component.findComponent(itemName .. " Control")
+      if controls[1] ~= nil then
+         local control = component.proxy(controls[1])
+         bldP[itemName] = { store, control }
+         print("Found: " .. itemName)
+      end
+   end
+   return bldP
+end
+
+function checkBuildingPair(itemName, store, split)
+   if split ~= nil and store ~= nil then
+      local invs = store:getInventories()
+      for k, v in pairs(invs) do
+         local invStacks = v.size
+         local cnt = v:getStack(v.size - 1).count
+   
+         if (cnt > 0) then 
+            --print(itemName .. " - Full")
+      
+         else
+           --print(itemName .. " - Transfering - " .. cnt)
+           local suc = split:transferItem(0)
+           local suc = split:transferItem(1)
+           local suc = split:transferItem(2)
+         end --end if
+      end
+   else
+      --print(itemName .. " - Skipping")
+   end --end if
+end
+
+print("Running")
+--Get building Pairs
+local itemPairs = findBuildings()
+
+local cnter = 0
+local store = nil
+local split = nil
+
+while true do
+   if cnter > refreshLimit then 
+      cnter = 0
+      itemPairs = findBuildings() 
+   end
+   cnter = cnter + 1
+   
+   for itemName, buildings in pairs(itemPairs) do
+      store = buildings[1]
+      split = buildings[2]
+      checkBuildingPair(itemName, store, split)
+   end
+end
