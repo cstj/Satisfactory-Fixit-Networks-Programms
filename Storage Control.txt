@@ -1,3 +1,4 @@
+--
 local refreshLimit = 50000
 
 function splitOnChar (inputstr, sep)
@@ -33,23 +34,43 @@ function findBuildings()
    return bldP
 end
 
-function checkBuildingPair(itemName, store, split)
-   if split ~= nil and store ~= nil then
+function checkIfFull(itemName, store)
+   local storeType = store.getType(store).name
+   local isFull = true
+   if (storeType == "CodeableMerger_C") then
+      if (store.canOutput) then 
+         isFull = false
+         local suc = store:transferItem(0)
+         local suc = store:transferItem(1)
+         local suc = store:transferItem(2)
+      end
+
+   elseif (storeType == "Build_Dispenser_C") then
       local invs = store:getInventories()
       for k, v in pairs(invs) do
          local invStacks = v.size
          local cnt = v:getStack(v.size - 1).count
    
          if (cnt > 0) then 
-            --print(itemName .. " - Full")
-      
-         else
-           --print(itemName .. " - Transfering - " .. cnt)
-           local suc = split:transferItem(0)
-           local suc = split:transferItem(1)
-           local suc = split:transferItem(2)
-         end --end if
+         else isFull = false
+         end
       end
+   end
+   return isFull
+end
+
+function checkBuildingPair(itemName, store, split)
+   if split ~= nil and store ~= nil then
+      local isFull = checkIfFull(itemName, store)
+      if (isFull) then         
+         --print(itemName .. " - Full")
+      
+      else
+        --print(itemName .. " - Transfering - " .. cnt)
+        local suc = split:transferItem(0)
+        local suc = split:transferItem(1)
+        local suc = split:transferItem(2)
+      end --end if
    else
       --print(itemName .. " - Skipping")
    end --end if
